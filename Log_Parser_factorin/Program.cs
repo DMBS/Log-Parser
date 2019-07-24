@@ -76,13 +76,13 @@ namespace LogParcer_factorin
                 Console.WriteLine("Minimum: {0} Millisecond", ViewTimeDurationMin);
                 Console.WriteLine("Average: {0} Millisecond", ViewTimeDurationAverage);
                 Console.WriteLine("Count of events: {0}\n ", Count);
-                Console.WriteLine("----------------------------------------------------------");
-                Console.Write("[Time of execution] | [Date started] | [Date finished] \n");
-                Console.WriteLine("----------------------------------------------------------");
+                Console.WriteLine("-----------------------------------------------------------------------");
+                Console.Write("Time of execution    | Date started                   | Date finished \n");
+                Console.WriteLine("-----------------------------------------------------------------------");
 
                 foreach (var l in r)
                 {
-                    Console.WriteLine(String.Format("{0,-10} | {1,-10} | {2,5}", l.TimeDuration.TotalMilliseconds, l.OperationDateStarted, l.OperationDateFinished));
+                    Console.WriteLine(String.Format("{0, -20} | {1, -30} | {2}", l.TimeDuration.TotalMilliseconds, l.OperationDateStarted, l.OperationDateFinished));
                 }
             }
 
