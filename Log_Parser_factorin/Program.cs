@@ -9,80 +9,74 @@ namespace LogParcer_factorin
 {
     class Program
     {
-        // Константы, учавствующие в фильтрации лога по необходимомым совпадениям
-        private const string eventJobStarted = "[ReceiveDltEventsJob] job started";
-        private const string eventJobFinished = "[ReceiveDltEventsJob] job finished";
-
-        /* "The ( ) acts as a capture group. 
-        So the matches array has all of matches that C# finds 
-        in your string and the sub array has the values of the capture groups inside of those matches" */
-
+        // Константа-regex паттерн, учавствующая в фильтрации строк лога по нужным событиям
         private const string pattern = @"(\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}).+\[ReceiveDltEventsJob\] job (started|finished)";
 
         static void Main(string[] args)
         {
-            //Регулярное выражение для парсинга дата и времени
-            Regex logRegex = new Regex(pattern);
+            Regex regExpression = new Regex(pattern);
 
-            //Парсинг лог-файла
-            List<Data> logs = new List<Data>();
+            //Парсинг лог-файла, получение необходимых данных и вычисление нужных значений
+
+            List<ParseData> log = new List<ParseData>();
+
             var path = Path.Combine(Environment.CurrentDirectory + @"\factorin_log.txt");
+
             using (StreamReader sr = new StreamReader(path))
             {
                 string line;
-                DateTime sed = DateTime.MinValue, finishEventDate;
-                TimeSpan timeDuration;
+                DateTime startDate = DateTime.MinValue, finishDate = DateTime.MinValue;
+                TimeSpan executionTime;
 
                 while ((line = sr.ReadLine()) != null)
                 {
-                    var match = logRegex.Match(line);
+                    // Находим все строки в логе, которые соответствуют нашему regex паттерну
+                    var match = regExpression.Match(line);
+
                     if (match.Success)
                     {
-                        //DateTime logtime = DateTime.ParseExact(match.Value, "MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-
-                        DateTime logtime = DateTime.ParseExact(match.Groups[1].Value, "MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-
+                        DateTime logTime = DateTime.ParseExact(match.Groups[1].Value, "MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
                         if (match.Groups[2].Value == "started")
                         {
-                            sed = logtime;
+                            startDate = logTime;
                         }
                         else
                         {
-                            finishEventDate = logtime;
-                            timeDuration = finishEventDate.Subtract(sed);
+                            // Для нахождения разницы (Timespan) времени выполнения из конечной даты вычитаем начальную.
+                            // Полученные данные добавляем в коллекцию
+                            finishDate = logTime;
+                            executionTime = finishDate.Subtract(startDate);
 
-                            logs.Add(new Data
+                            log.Add(new ParseData
                             {
-                                TimeDuration = timeDuration,
-                                OperationDateStarted = sed,
-                                OperationDateFinished = finishEventDate
-
+                                ExecutionTime = executionTime,
+                                StartDate = startDate,
+                                FinishDate = finishDate
                             });
                         }
                     }
                 }
 
-                //part two - calculate time
-
-                var r = logs.OrderByDescending(x => x.TimeDuration);
-                var ViewTimeDurationMax = r.Select(p => p.TimeDuration.TotalMilliseconds).Max();
-                var ViewTimeDurationMin = r.Select(p => p.TimeDuration.TotalMilliseconds).Min();
-                var ViewTimeDurationAverage = r.Select(p => p.TimeDuration.TotalMilliseconds).Average();
-                var Count = r.Count();
+                //Формирование отчета с необходимой информацией и вывод на консоль
+                var items = log.OrderByDescending(x => x.ExecutionTime);
+                var DisplayExecutionTimeMax = items.Select(p => p.ExecutionTime.TotalMilliseconds).Max();
+                var DisplayExecutionTimenMin = items.Select(p => p.ExecutionTime.TotalMilliseconds).Min();
+                var DisplayExecutionTimeAverage = items.Select(p => p.ExecutionTime.TotalMilliseconds).Average();
+                var Count = items.Count();
 
                 Console.WriteLine("Time Of Execution task [ReceiveDltEventsJob]");
-                Console.WriteLine("Maximum: {0} Millisecond", ViewTimeDurationMax);
-                Console.WriteLine("Minimum: {0} Millisecond", ViewTimeDurationMin);
-                Console.WriteLine("Average: {0} Millisecond", ViewTimeDurationAverage);
+                Console.WriteLine("Maximum: {0} Millisecond", DisplayExecutionTimeMax);
+                Console.WriteLine("Minimum: {0} Millisecond", DisplayExecutionTimenMin);
+                Console.WriteLine("Average: {0} Millisecond", DisplayExecutionTimeAverage);
                 Console.WriteLine("Count of events: {0}\n ", Count);
-                Console.WriteLine("-----------------------------------------------------------------------");
-                Console.Write("Time of execution    | Date started                   | Date finished \n");
-                Console.WriteLine("-----------------------------------------------------------------------");
+                Console.WriteLine("----------------------------------------------------------------------------");
+                Console.Write("Time of execution    | Start date                     | Finish date \n");
+                Console.WriteLine("----------------------------------------------------------------------------");
 
-                foreach (var l in r)
+                foreach (var item in items)
                 {
-                    Console.WriteLine(String.Format("{0, -20} | {1, -30} | {2}", l.TimeDuration.TotalMilliseconds, l.OperationDateStarted, l.OperationDateFinished));
+                    Console.WriteLine(String.Format("{0, -20} | {1, -30} | {2}", item.ExecutionTime.TotalMilliseconds, item.StartDate, item.FinishDate));
                 }
             }
 
@@ -91,12 +85,12 @@ namespace LogParcer_factorin
     }
 
     /// <summary>
-    /// Class of Data
+    /// Вспомогательный класс для хранения необходимых свойств
     /// </summary>
-    public class Data
+    public class ParseData
     {
-        public TimeSpan TimeDuration { get; set; }
-        public DateTime OperationDateStarted { get; set; }
-        public DateTime OperationDateFinished { get; set; }
+        public TimeSpan ExecutionTime { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime FinishDate { get; set; }
     }
 }
